@@ -1,52 +1,66 @@
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 
-nombre_modelo = "t5-base"
+nombre_modelo = "t5-large"
 
-# Importar los modulos necesarios del modelo T5
+# Importar los módulos necesarios del modelo T5
 convertir_vectores = T5Tokenizer.from_pretrained(nombre_modelo)
 modelo = T5ForConditionalGeneration.from_pretrained(nombre_modelo)
 
-# Mostrar un menu para que el usuario elija la opción que desea realizar
-print("Que tarea quieres realizar")
+# Mostrar un menú para que el usuario elija la opción que desea realizar
+print("¿Qué tarea quieres realizar?")
 print("1. Resumir")
 print("2. Traducir")
 print("3. Hacer una pregunta")
+print("4. Generar preguntas a partir de un texto")
 
 # Leer la elección del usuario
-eleccion = int(input())
+eleccion = int(input("Elige una opción (1-4): "))
 
-# Variable para evaluar que orden se le dará al modelo
+# Variable para evaluar qué orden se le dará al modelo
 tipo_tarea = ""
 
-# Solicitar el texto que se quiere procesar
-texto = input("Ingresa el texto: ")
-
-# Si la tarea es 1, es decir, resumir texto, el comando que se agrega es "summarize: "
-if eleccion == 1:
-    tipo_tarea = "summarize: "
+# Opción 4: Generar preguntas
+if eleccion == 4:
+    texto = input("Ingresa el texto del cual generar preguntas: ")
+    tipo_tarea = "generate questions: "
     texto = f"{tipo_tarea} {texto}"
+    num_preguntas = 10  # Número de preguntas a generar
+    max_length = 512
 
-# Si la tarea es 2, es decir, traducir texto, el comando que se agrega es "translate idioma a idioma: "
-elif eleccion == 2:
-    tipo_tarea = "translate English to French: "
-    texto = f"{tipo_tarea} {texto}"
+    vectores_entrada = convertir_vectores(texto, return_tensors="pt").input_ids
+    vectores_salidad = modelo.generate(
+        vectores_entrada,
+        max_length=max_length,
+        num_return_sequences=num_preguntas,
+        do_sample=True,
+        top_k=50,
+        top_p=0.95
+    )
 
-# Si la tarea es 3, es decir, responder una pregunta, el comando que se agrega es "question: "
-# Pero además se pide el contexto dentro del cual se va responder la pregunta
-elif eleccion == 3:
-    contexto = input("Ingresa el contexto: ")
-    tipo_tarea = "question: "
-    texto = f"{tipo_tarea} {texto}. context: {contexto}"
+    print("\n========= PREGUNTAS GENERADAS =========")
+    for i, salida in enumerate(vectores_salidad, 1):
+        pregunta = convertir_vectores.decode(salida, skip_special_tokens=True)
+        print(f"{i}. {pregunta}")
 
-# Calcular los vectores de entrada
-vectores_entrada = convertir_vectores(texto, return_tensors="pt").input_ids
+else:
+    texto = input("Ingresa el texto: ")
 
-# Calcular los vectores de salida
-vectores_salidad = modelo.generate(vectores_entrada, max_length=512)
+    if eleccion == 1:
+        tipo_tarea = "summarize: "
+        texto = f"{tipo_tarea} {texto}"
 
-# Decodificar los vectores de salida para generar el resultado
-texto_salida = convertir_vectores.decode(vectores_salidad[0], skip_special_tokens=True)
+    elif eleccion == 2:
+        tipo_tarea = "translate English to French: "
+        texto = f"{tipo_tarea} {texto}"
 
-# Mostrar el texto resumido
-print("\n ========= RESULTADO ==========")
-print(texto_salida)
+    elif eleccion == 3:
+        contexto = input("Ingresa el contexto: ")
+        tipo_tarea = "question: "
+        texto = f"{tipo_tarea} {texto}. context: {contexto}"
+
+    vectores_entrada = convertir_vectores(texto, return_tensors="pt").input_ids
+    vectores_salidad = modelo.generate(vectores_entrada, max_length=512)
+    texto_salida = convertir_vectores.decode(vectores_salidad[0], skip_special_tokens=True)
+
+    print("\n========= RESULTADO =========")
+    print(texto_salida)

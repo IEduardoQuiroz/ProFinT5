@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo T5 - Opciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col justify-center items-center h-screen">
+
+<!-- Pantalla de carga inicial -->
+<div id="loadingScreen" class="flex flex-col items-center justify-center">
+    <h1 class="text-3xl font-bold mb-4">Cargando Modelo T5...</h1>
+    <p class="text-center max-w-lg">El modelo T5 (Text-to-Text Transfer Transformer) es un potente modelo de inteligencia artificial desarrollado por Google que permite realizar tareas diversas como resumir textos, traducciones automáticas, generar preguntas, responder preguntas, y más.</p>
+    <div class="mt-4 animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-blue-500"></div>
+</div>
+
+<!-- Página principal (inicialmente oculta) -->
+<div id="mainPage" class="hidden text-center">
+    <h1 class="text-4xl font-bold mb-6">Selecciona una opción</h1>
+
+    <div class="space-y-4">
+        <button class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">1. Resumir</button>
+        <button class="px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600">2. Traducir</button>
+        <button class="px-6 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">3. Hacer una pregunta</button>
+        <button class="px-6 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">4. Generar preguntas automáticamente</button>
+        <button class="px-6 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">5. Generar imagen (Stable Diffusion)</button>
+    </div>
+</div>
+
+<script>
+    // Mostrar pantalla de carga por 3 segundos y luego mostrar página principal
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            document.getElementById('loadingScreen').classList.add('hidden');
+            document.getElementById('mainPage').classList.remove('hidden');
+        }, 3000); // Duración de pantalla de carga en milisegundos
+    });
+</script>
+
+</body>
+</html>

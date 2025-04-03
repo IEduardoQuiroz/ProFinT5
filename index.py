@@ -1,74 +1,66 @@
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 
-nombre_modelo = "google/mt5-base"
+# Modelos generales para resumir, traducir y preguntas
+modelo_general = "t5-base"
+convertir_vectores = T5Tokenizer.from_pretrained(modelo_general)
+modelo = T5ForConditionalGeneration.from_pretrained(modelo_general)
 
-# Importar los módulos necesarios del modelo T5
-convertir_vectores = T5Tokenizer.from_pretrained(nombre_modelo)
-modelo = T5ForConditionalGeneration.from_pretrained(nombre_modelo)
+# Modelo especializado para generación de preguntas
+modelo_qg = "valhalla/t5-base-qg-hl"
+tokenizer_qg = T5Tokenizer.from_pretrained(modelo_qg)
+modelo_preguntas = T5ForConditionalGeneration.from_pretrained(modelo_qg)
 
-# Mostrar un menú para que el usuario elija la opción que desea realizar
+# Menú de opciones
 print("¿Qué tarea quieres realizar?")
 print("1. Resumir")
 print("2. Traducir")
 print("3. Hacer una pregunta")
-print("4. Generar preguntas a partir de un texto")
+print("4. Generar preguntas automáticamente")
 
 # Leer la elección del usuario
 eleccion = int(input())
 
-# Variable para evaluar qué orden se le dará al modelo
-tipo_tarea = ""
+# Solicitar el texto que se quiere procesar
+texto = input("Ingresa el texto: ")
 
-# Si la tarea es generar preguntas
+if eleccion == 1:
+    texto = f"summarize: {texto}"
+
+elif eleccion == 2:
+    texto = f"translate English to French: {texto}"
+
+elif eleccion == 3:
+    contexto = input("Ingresa el contexto: ")
+    texto = f"question: {texto}. context: {contexto}"
+
+# Procesar generación automática de preguntas con modelo especializado
 if eleccion == 4:
-    texto = input("Ingresa el texto del cual quieres generar preguntas: ")
-    tipo_tarea = "generate questions: "
-    texto = f"{tipo_tarea} {texto}"
-    
-    # Convertir texto a vectores
-    vectores_entrada = convertir_vectores(texto, return_tensors="pt").input_ids
-    
-    # Generar múltiples preguntas (hasta 10)
-    vectores_salida = modelo.generate(
+    texto_preparado = f"generate questions: {texto}"
+    vectores_entrada = tokenizer_qg(texto_preparado, return_tensors="pt").input_ids
+
+    preguntas_generadas = modelo_preguntas.generate(
         vectores_entrada,
-        max_length=256,
+        max_length=64,
         num_return_sequences=10,
-        num_beams=10,
+        num_beams=20,
+        no_repeat_ngram_size=2,
         early_stopping=True
     )
-    
-    # Mostrar todas las preguntas generadas
-    print("\n========= PREGUNTAS GENERADAS =========")
-    for i, salida in enumerate(vectores_salida, 1):
-        pregunta = convertir_vectores.decode(salida, skip_special_tokens=True)
-        print(f"{i}. {pregunta}")
 
+    print("\n========= PREGUNTAS GENERADAS ==========")
+    preguntas = [tokenizer_qg.decode(preg, skip_special_tokens=True) for preg in preguntas_generadas]
+    for idx, pregunta in enumerate(preguntas, 1):
+        print(f"{idx}. {pregunta}")
+
+# Procesar otras opciones con modelo general
 else:
-    # Solicitar el texto que se quiere procesar
-    texto = input("Ingresa el texto: ")
-
-    if eleccion == 1:
-        tipo_tarea = "summarize: "
-        texto = f"{tipo_tarea} {texto}"
-
-    elif eleccion == 2:
-        tipo_tarea = "translate English to French: "
-        texto = f"{tipo_tarea} {texto}"
-
-    elif eleccion == 3:
-        contexto = input("Ingresa el contexto: ")
-        tipo_tarea = "question: "
-        texto = f"{tipo_tarea} {texto}. context: {contexto}"
-
-    # Calcular los vectores de entrada
     vectores_entrada = convertir_vectores(texto, return_tensors="pt").input_ids
+    vectores_salida = modelo.generate(
+        vectores_entrada,
+        max_length=512,
+        early_stopping=True
+    )
 
-    # Calcular los vectores de salida
-    vectores_salida = modelo.generate(vectores_entrada, max_length=512)
-
-    # Decodificar los vectores de salida para generar el resultado
     texto_salida = convertir_vectores.decode(vectores_salida[0], skip_special_tokens=True)
-
-    # Mostrar el texto procesado
-    print("\n========= RESULTADO =========")
+    print("\n========= RESULTADO ==========")
     print(texto_salida)

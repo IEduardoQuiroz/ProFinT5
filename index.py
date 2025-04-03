@@ -6,7 +6,7 @@ convertir_vectores = T5Tokenizer.from_pretrained(modelo_general)
 modelo = T5ForConditionalGeneration.from_pretrained(modelo_general)
 
 # Modelo especializado para generación de preguntas
-modelo_qg = "valhalla/t5-base-qg-hl"
+modelo_qg = "mrm8488/t5-base-finetuned-question-generation-ap"
 tokenizer_qg = T5Tokenizer.from_pretrained(modelo_qg)
 modelo_preguntas = T5ForConditionalGeneration.from_pretrained(modelo_qg)
 
@@ -33,9 +33,9 @@ elif eleccion == 3:
     contexto = input("Ingresa el contexto: ")
     texto = f"question: {texto}. context: {contexto}"
 
-# Procesar generación automática de preguntas con modelo especializado
+# Procesar generación automática de preguntas con modelo especializado en español
 if eleccion == 4:
-    texto_preparado = f"generate questions: {texto}"
+    texto_preparado = f"generar preguntas: {texto}"
     vectores_entrada = tokenizer_qg(texto_preparado, return_tensors="pt").input_ids
 
     preguntas_generadas = modelo_preguntas.generate(
@@ -49,6 +49,7 @@ if eleccion == 4:
 
     print("\n========= PREGUNTAS GENERADAS ==========")
     preguntas = [tokenizer_qg.decode(preg, skip_special_tokens=True) for preg in preguntas_generadas]
+
     for idx, pregunta in enumerate(preguntas, 1):
         print(f"{idx}. {pregunta}")
 

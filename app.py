@@ -7,7 +7,6 @@ import re
 
 app = Flask(__name__)
 
-# Configurar modelos
 modelo_general = "t5-base"
 convertir_vectores = T5Tokenizer.from_pretrained(modelo_general)
 modelo = T5ForConditionalGeneration.from_pretrained(modelo_general)
@@ -24,13 +23,14 @@ generador_imagenes = StableDiffusionPipeline.from_pretrained(
 ).to(device)
 
 def preparar_texto_para_preguntas(texto):
-    frases = re.split(r'(\.|,|;|:) ', texto)
-    textos_resaltados = []
+    frases = re.split(r'(?<=[.!?]) +', texto)
+    preguntas_input = []
     for frase in frases:
         frase_limpia = frase.strip()
-        if len(frase_limpia.split()) > 3:
-            textos_resaltados.append(texto.replace(frase_limpia, f"<hl> {frase_limpia} </hl>"))
-    return textos_resaltados[:5]
+        if len(frase_limpia.split()) > 4:
+            entrada = f"generate questions: <hl> {frase_limpia} </hl>"
+            preguntas_input.append(entrada)
+    return preguntas_input[:5]
 
 @app.route('/')
 def index():
@@ -59,9 +59,9 @@ def procesar():
         return jsonify({'resultado': respuesta})
 
     elif tipo == 'generar_preguntas':
-        textos_resaltados = preparar_texto_para_preguntas(texto)
+        entradas = preparar_texto_para_preguntas(texto)
         preguntas = []
-        for entrada in textos_resaltados:
+        for entrada in entradas:
             ids = tokenizer_qg(entrada, return_tensors="pt").input_ids
             salida = modelo_preguntas.generate(ids, max_length=64, num_beams=10, early_stopping=True)
             pregunta = tokenizer_qg.decode(salida[0], skip_special_tokens=True)
